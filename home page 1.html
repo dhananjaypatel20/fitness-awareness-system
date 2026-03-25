@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitLife AI | Elite Entry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff88;
+            --danger: #ff4757;
+            --glass: rgba(15, 23, 42, 0.85);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+            background: #000;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: white;
+        }
+
+        /* --- CINEMATIC BACKGROUND --- */
+        .bg-img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0.6;
+            filter: brightness(0.4) contrast(1.1);
+            z-index: 1;
+            transition: 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- WELCOME SCREEN --- */
+        #welcome-screen {
+            z-index: 10;
+            text-align: center;
+            transition: 0.8s ease;
+        }
+
+        #welcome-screen h1 {
+            font-size: clamp(3rem, 10vw, 5.5rem);
+            font-weight: 800;
+            letter-spacing: -2px;
+            background: linear-gradient(to bottom, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+
+        .quote {
+            font-size: 1.2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            color: var(--primary);
+            margin-bottom: 40px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        .btn-enter {
+            padding: 20px 60px;
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.4s;
+        }
+
+        .btn-enter:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.4);
+            transform: scale(1.05);
+        }
+
+        /* --- LOGIN SCREEN --- */
+        #login-screen {
+            display: none;
+            z-index: 10;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: 0.8s ease;
+        }
+
+        .registration-box {
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 420px;
+            padding: 40px;
+            border-radius: 40px;
+            text-align: center;
+        }
+
+        .input-group { position: relative; margin-bottom: 25px; text-align: left; }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px 5px 5px 0;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .input-group label {
+            position: absolute;
+            top: 12px; left: 0;
+            color: #64748b;
+            pointer-events: none;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus ~ label,
+        .input-group input:not(:placeholder-shown) ~ label {
+            top: -12px; font-size: 0.75rem; color: var(--primary);
+        }
+
+        .error-msg {
+            font-size: 11px; color: var(--danger);
+            position: absolute; bottom: -18px; left: 0; opacity: 0;
+        }
+
+        .btn-sync {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            border: none; border-radius: 15px;
+            color: #000; font-weight: 800;
+            cursor: pointer; margin-top: 15px;
+        }
+
+        #popup {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 350px; background: #0f172a;
+            border-radius: 40px; padding: 40px; text-align: center; z-index: 100;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.92);
+            transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        #popup.active { transform: translate(-50%, -50%) scale(1); }
+    </style>
+</head>
+<body>
+
+    <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop" class="bg-img" id="bg-photo">
+
+    <div id="welcome-screen">
+        <h1>WELCOME</h1>
+        <p class="quote">“Invest today, stay fit tomorrow.”</p>
+        <button class="btn-enter" onclick="showLogin()">Login</button>
+    </div>
+
+    <div id="login-screen">
+        <div class="registration-box">
+            <h2 style="color: var(--primary); font-weight: 800; margin-bottom: 30px;">CREATE PROFILE</h2>
+            
+            <div class="input-group">
+                <input type="text" id="fName" placeholder=" " required>
+                <label>First Name</label>
+            </div>
+            <div class="input-group">
+                <input type="text" id="mName" placeholder=" " required>
+                <label>Middle Name</label>
+            </div>
+            <div class="input-group">
+                <input type="text" id="lName" placeholder=" " required>
+                <label>Last Name</label>
+            </div>
+            <div class="input-group">
+                <input type="email" id="email" placeholder=" " required oninput="validateEmail()">
+                <label>Email Address</label>
+                <span class="error-msg" id="emailError">Invalid email format</span>
+            </div>
+            <div class="input-group">
+                <input type="tel" id="phone" placeholder=" " required oninput="validatePhone()">
+                <label>Phone Number</label>
+                <span class="error-msg" id="phoneError">Enter 10 digit number</span>
+            </div>
+
+            <button class="btn-sync" onclick="registerUser()">START SYNC</button>
+        </div>
+    </div>
+
+    <div id="popup">
+        <h2 style="color: var(--primary); margin-bottom: 10px;">AUTHORIZED</h2>
+        <p id="pop-msg" style="color: #cbd5e1;"></p>
+        <button style="margin-top: 25px; padding: 12px 40px; border-radius: 50px; background: white; color: black; border: none; font-weight: 700; cursor: pointer;" onclick="location.reload()">PROCEED</button>
+    </div>
+
+    <script>
+        function showLogin() {
+            new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play();
+            const welcome = document.getElementById('welcome-screen');
+            const login = document.getElementById('login-screen');
+            const bg = document.getElementById('bg-photo');
+
+            welcome.style.opacity = "0";
+            bg.style.filter = "brightness(0.2) blur(8px)";
+
+            setTimeout(() => {
+                welcome.style.display = "none";
+                login.style.display = "block";
+                setTimeout(() => {
+                    login.style.opacity = "1";
+                    login.style.transform = "translateY(0)";
+                }, 50);
+            }, 800);
+        }
+
+        function validateEmail() {
+            const email = document.getElementById('email');
+            const error = document.getElementById('emailError');
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if(!regex.test(email.value) && email.value !== "") {
+                error.style.opacity = "1";
+                email.style.borderBottomColor = "var(--danger)";
+            } else {
+                error.style.opacity = "0";
+                email.style.borderBottomColor = "var(--primary)";
+            }
+        }
+
+        function validatePhone() {
+            const phone = document.getElementById('phone');
+            const error = document.getElementById('phoneError');
+            const regex = /^[0-9]{10}$/;
+            if(!regex.test(phone.value) && phone.value !== "") {
+                error.style.opacity = "1";
+                phone.style.borderBottomColor = "var(--danger)";
+            } else {
+                error.style.opacity = "0";
+                phone.style.borderBottomColor = "var(--primary)";
+            }
+        }
+
+        function registerUser() {
+            const fName = document.getElementById('fName').value;
+            if(!fName) return alert("Please fill the name field.");
+            
+            new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play();
+            document.getElementById('pop-msg').innerHTML = `Welcome <b>${fName}</b>. Your investment in health begins now.`;
+            document.getElementById('popup').classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pro Nutrition Tracker - Multi-Language Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    body {background:#020617;color:white;font-family:'Poppins',sans-serif;padding:20px; overflow-x: hidden;}
+    .container {max-width:900px;margin:auto;background: rgba(255,255,255,0.05);border-radius:20px;padding:30px;}
+    h1 {text-align:center;color:#22c55e;margin-bottom:20px;}
+    select,input,textarea {padding:10px;margin:5px;border-radius:10px;border:none; background: #1e293b; color: white;}
+    #foodSearch { width: 95%; border: 1px solid #22c55e; }
+    #daySelect { width: 95%; border: 1px solid #22c55e; cursor: pointer; margin-bottom: 10px; max-height: 200px; }
+    button {padding:10px 20px;margin:5px;background:#22c55e;border:none;border-radius:10px;cursor:pointer;font-weight:600;}
+    button:hover {transform:scale(1.05);}
+    .meal-item {display:flex;justify-content:space-between;background: rgba(34,197,94,0.1);padding:12px;border-radius:10px;margin-top:10px; border-left: 4px solid #22c55e;}
+    .summary {margin-top:15px;padding:10px;background: rgba(59,130,246,0.1);border-radius:10px;text-align:center; font-weight: bold;}
+    #weeklyReport { display:none; background: linear-gradient(135deg, #1e293b, #0f172a); padding: 20px; border-radius: 20px; border: 2px gold solid; margin-bottom: 20px; text-align: center; }
+    .grade { font-size: 3em; font-weight: 800; color: gold; margin: 10px 0; }
+    #criticalOverlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: rgba(127, 29, 29, 0.95); border: 3px solid #ef4444; padding: 30px; border-radius: 20px; z-index: 1000; text-align: center; }
+    #bestPlan { display: none; margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #064e3b, #020617); border-radius: 20px; border: 2px solid #22c55e; }
+    .plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .plan-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; font-size: 0.85em; border: 1px solid rgba(34,197,94,0.3); }
+    .day-tag { color: #22c55e; font-weight: bold; font-size: 0.8em; margin-right: 5px; }
+    .lang-box { font-size: 0.9em; margin-top: 10px; text-align: left; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; line-height: 1.4; border-left: 3px solid #3b82f6; }
+</style>
+</head>
+<body>
+
+<div id="criticalOverlay">
+    <h2 style="margin:0; color:#fff;">⚠️ UNHEALTHY CHOICE!</h2>
+    <p id="criticalMessage" style="font-size: 1.1em; color: #fca5a5;"></p>
+    <button onclick="closeOverlay()" style="background:white; color:#7f1d1d;">I will follow the recovery plan</button>
+</div>
+
+<div class="container">
+    <div id="weeklyReport">
+        <h3>🏆 Health Performance Report</h3>
+        <div class="grade" id="finalGrade">A</div>
+        <div id="suggestionBox" style="font-weight: bold; color: #fff; margin-bottom: 10px;"></div>
+        
+        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <button onclick="manualSpeak()" style="background:#facc15; color:#020617;">🔊 Re-play Suggestions (3 Lang)</button>
+            <button onclick="stopVoice()" style="background:#ef4444; color:white;">🛑 Stop Voice</button>
+        </div>
+    </div>
+
+    <h1>🧠 Smart Nutrition Tracker</h1>
+
+    <select id="daySelect"></select>
+    <input type="text" id="foodSearch" list="foodOptions" placeholder="🔍 Search Food...">
+    <datalist id="foodOptions"></datalist>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: center;">
+        <input type="number" id="calories" placeholder="Kcal" readonly>
+        <input type="number" id="protein" placeholder="Prot (g)" readonly>
+        <input type="number" id="carbs" placeholder="Carb (g)" readonly>
+        <input type="number" id="fat" placeholder="Fat (g)" readonly>
+    </div>
+
+    <button onclick="addMeal()">➕ Add Meal</button>
+    <button onclick="forceReport()" style="background:#3b82f6;">📊 Generate Report Now</button>
+    <button onclick="clearAllMeals()" style="background:#f59e0b;">🗑️ Clear History</button>
+
+    <div class="summary" id="summaryBox">Total: 0 kcal</div>
+
+    <div id="bestPlan">
+        <h3 id="planTitle" style="color:#22c55e">🛡️ Specialized Recovery Plan</h3>
+        <p id="planReason"></p>
+        <div class="plan-grid" id="planGrid"></div>
+    </div>
+
+    <div id="mealList"></div>
+    <canvas id="nutritionChart"></canvas>
+    
+    <audio id="alertSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+    <audio id="successSound" src="https://actions.google.com/sounds/v1/water/air_leak_short.ogg"></audio>
+</div>
+
+<script>
+// --- Data Section ---
+const foodData = {
+    "Apple": {c:52, p:0.3, ch:14, f:0.2, h:true},
+    "Banana": {c:89, p:1.1, ch:23, f:0.3, h:true},
+    "Oats": {c:150, p:6, ch:27, f:3, h:true},
+    "Paneer Tikka": {c:280, p:18, ch:8, f:20, h:true},
+    "Samosa": {c:250, p:4, ch:25, f:15, h:false, plan: "High trans-fat!", items: ["🏃 15m Walk", "🍵 Ginger Tea"]},
+    "Pizza Slice": {c:285, p:12, ch:36, f:10, h:false, plan: "Refined flour alert!", items: ["🥗 Green Salad", "💧 1L Water"]},
+    "Dal Khichdi": {c:220, p:9, ch:35, f:5, h:true},
+    "Chicken Salad": {c:250, p:25, ch:5, f:12, h:true},
+    "Burger": {c:450, p:15, ch:45, f:22, h:false, plan: "High calorie/sodium!", items: ["🚶 30m Walk", "🚫 No Salt Next"]},
+    "Idli": {c:60, p:2, ch:12, f:0.1, h:true},
+    "Poha": {c:180, p:3, ch:35, f:4, h:true},
+    "Greek Yogurt": {c:100, p:10, ch:4, f:5, h:true},
+    "French Fries": {c:312, p:3.4, ch:41, f:15, h:false, plan: "Deep fried carbs!", items: ["🍋 Lemon Water", "🍎 1 Apple"]},
+    "Boiled Egg": {c:78, p:6, ch:0.6, f:5, h:true},
+    "Butter Chicken": {c:400, p:20, ch:10, f:30, h:false, plan: "High saturated fat!", items: ["🍵 Green Tea", "🥣 Ajwain Water"]},
+    "Panipuri": {c:150, p:2, ch:28, f:4, h:false, plan: "Sodium Spike!", items: ["💧 1L Water", "🚫 No Salt Next"]},
+    "Vada Pav": {c:290, p:5, ch:42, f:14, h:false, plan: "Carb & Fried Load!", items: ["🏃 20m Jog", "🍵 Black Tea"]},
+    "Cake": {c:320, p:4, ch:45, f:16, h:false, plan: "High Sugar!", items: ["🏃 30m Walk", "🚫 No Sugar Today"]},
+    "Puff": {c:270, p:4, ch:32, f:18, h:false, plan: "Trans-fats in Pastry!", items: ["🍵 Green Tea", "🍎 1 Apple"]},
+    "Roti": {c:85, p:3, ch:18, f:0.5, h:true},
+    "Subji": {c:120, p:2, ch:15, f:6, h:true},
+    "Dal Bhat": {c:250, p:8, ch:45, f:4, h:true},
+    "Khichdi": {c:200, p:7, ch:38, f:5, h:true},
+    "Paratha": {c:180, p:4, ch:25, f:8, h:true},
+    "Pethla": {c:160, p:6, ch:15, f:8, h:true},
+    "Sandwich": {c:250, p:8, ch:30, f:10, h:true},
+    "Misal Pav": {c:450, p:12, ch:55, f:22, h:false, plan: "Spicy Oil & Refined Flour!", items: ["🥛 Buttermilk", "🚶 20m Walk"]},
+    "Medu Vada": {c:280, p:6, ch:25, f:18, h:false, plan: "Deep Fried!", items: ["🍵 Green Tea", "🏃 15m Walk"]},
+    "Kaju (5)": {c:45, p:1.5, ch:2.5, f:4, h:true},
+    "Almonds": {c:70, p:2.5, ch:2.5, f:6, h:true},
+    "Grapes": {c:62, p:0.6, ch:16, f:0.3, h:true},
+    "All Fruits": {c:60, p:0.8, ch:15, f:0.2, h:true},
+    "Milk": {c:120, p:8, ch:12, f:5, h:true}
+};
+
+// --- Initialization ---
+let meals = JSON.parse(localStorage.getItem("nutritionMeals")) || [];
+let currentLangData = { en: "", hi: "", gu: "" };
+
+const daySelect = document.getElementById("daySelect");
+for(let i=1; i<=9; i++) {
+    let opt = document.createElement("option");
+    opt.value = `Day ${i}`; opt.innerText = `📅 Day ${i}`;
+    daySelect.appendChild(opt);
+}
+
+const foodOptions = document.getElementById("foodOptions");
+Object.keys(foodData).forEach(name => {
+    let opt = document.createElement("option"); opt.value = name;
+    foodOptions.appendChild(opt);
+});
+
+// --- Speech Logic ---
+function speakMultiLang(msgs) {
+    window.speechSynthesis.cancel(); // Clear any playing voice
+    
+    const voices = window.speechSynthesis.getVoices();
+    
+    const sequence = [
+        { text: msgs.en, lang: 'en-US' },
+        { text: msgs.hi, lang: 'hi-IN' },
+        { text: msgs.gu, lang: 'gu-IN' }
+    ];
+
+    sequence.forEach((item) => {
+        const utterance = new SpeechSynthesisUtterance(item.text);
+        utterance.lang = item.lang;
+        utterance.rate = 0.9; // Slightly slower for clarity
+        window.speechSynthesis.speak(utterance);
+    });
+}
+
+function stopVoice() {
+    window.speechSynthesis.cancel();
+}
+
+function manualSpeak() {
+    speakMultiLang(currentLangData);
+}
+
+// --- App Logic ---
+function forceReport() {
+    if(meals.length === 0) return alert("Add a meal first!");
+    updateSummary(true);
+}
+
+function addMeal(){
+  const foodName = document.getElementById("foodSearch").value;
+  if(!foodData[foodName]) return;
+  const foodInfo = foodData[foodName];
+  const meal = {
+    id: Date.now(), day: daySelect.value,
+    name: foodName, calories: foodInfo.c, protein: foodInfo.p,
+    carbs: foodInfo.ch, fat: foodInfo.f, isHealthy: foodInfo.h
+  };
+  
+  if (!meal.isHealthy) {
+      showUnhealthyWarning(foodName);
+      document.getElementById("alertSound").play();
+  } else {
+      document.getElementById("successSound").play();
+  }
+  
+  meals.push(meal);
+  saveAndRender();
+}
+
+function updateSummary(force = false){
+  let tc=0, tp=0, healthyCount=0;
+  meals.forEach(m=>{ tc+=m.calories; tp+=m.protein; if(m.isHealthy) healthyCount++; });
+  document.getElementById("summaryBox").innerHTML= `TOTAL: 🔥 ${tc} kcal | 💪 ${tp}g Protein`;
+  
+  if(meals.length >= 9 || force) {
+      document.getElementById("weeklyReport").style.display = "block";
+      showReport(healthyCount, force);
+  } else {
+      document.getElementById("weeklyReport").style.display = "none";
+  }
+}
+
+function showReport(healthyCount, forceVoice = false) {
+    const gradeTxt = document.getElementById("finalGrade");
+    const suggest = document.getElementById("suggestionBox");
+    let healthScore = (healthyCount / meals.length) * 100;
+    
+    const isGood = healthScore >= 70;
+    
+    if(isGood) {
+        gradeTxt.innerText = "A+"; gradeTxt.style.color = "#22c55e";
+        currentLangData = {
+            en: "Your food is good. Go to the gym and do yoga, exercise, and meditation daily.",
+            hi: "तुम्हारा खाना अच्छा है। रोज़ जिम जाओ और योग, व्यायाम और ध्यान करो।",
+            gu: "તમારું ભોજન સારું છે. દરરોજ જિમ જાઓ અને યોગ, કસરત અને ધ્યાન કરો."
+        };
+    } else {
+        gradeTxt.innerText = "F"; gradeTxt.style.color = "#ef4444";
+        currentLangData = {
+            en: "Your food is not good. Eat healthy diet food and concentrate on your health. Go to the gym regularly.",
+            hi: "तुम्हारा खाना अच्छा नहीं है। स्वस्थ आहार खाओ और अपनी सेहत पर ध्यान दो। नियमित रूप से जिम जाओ।",
+            gu: "તમારું ભોજન સારું નથી. આરોગ્યપ્રદ આહાર ખાઓ અને તમારા સ્વાસ્થ્ય પર ધ્યાન આપો. નિયમિત રીતે જિમ જાઓ."
+        };
+    }
+
+    suggest.innerHTML = `
+        <div class="lang-box"><b>🇺🇸 English:</b><br>${currentLangData.en}</div>
+        <div class="lang-box"><b>🇮🇳 Hindi:</b><br>${currentLangData.hi}</div>
+        <div class="lang-box"><b>🇮🇳 Gujarati:</b><br>${currentLangData.gu}</div>
+    `;
+
+    if(!document.getElementById("weeklyReport").dataset.spoken || forceVoice) {
+        speakMultiLang(currentLangData);
+        document.getElementById("weeklyReport").dataset.spoken = "true";
+    }
+}
+
+function showUnhealthyWarning(name) {
+    document.getElementById("criticalMessage").innerHTML = `⚠️ <b>${name}</b> detected!`;
+    const grid = document.getElementById("planGrid");
+    grid.innerHTML = "";
+    foodData[name].items.forEach(item => { grid.innerHTML += `<div class="plan-item">${item}</div>`; });
+    document.getElementById("criticalOverlay").style.display = "block";
+    document.getElementById("bestPlan").style.display = "block";
+}
+
+function closeOverlay() { document.getElementById("criticalOverlay").style.display = "none"; }
+
+function clearAllMeals(){
+  if(confirm("Wipe all data?")){
+    meals=[]; localStorage.removeItem("nutritionMeals");
+    delete document.getElementById("weeklyReport").dataset.spoken;
+    stopVoice();
+    saveAndRender();
+  }
+}
+
+function deleteMeal(id){ meals = meals.filter(m=>m.id!==id); saveAndRender(); }
+
+function saveAndRender(){ 
+    localStorage.setItem("nutritionMeals", JSON.stringify(meals));
+    const mealList = document.getElementById("mealList");
+    mealList.innerHTML = "";
+    meals.forEach(m=>{
+        mealList.innerHTML += `<div class="meal-item" style="border-left: 4px solid ${m.isHealthy ? "#22c55e" : "#ef4444"}">
+            <div><span class="day-tag">${m.day}:</span><b>${m.name}</b></div>
+            <button onclick="deleteMeal(${m.id})">🗑️</button>
+        </div>`;
+    });
+    updateChart(); updateSummary(); 
+}
+
+const chart = new Chart(document.getElementById("nutritionChart"),{type:'bar',data:{labels:[],datasets:[
+  {label:'Protein',data:[],backgroundColor:'#3b82f6'},
+  {label:'Carbs',data:[],backgroundColor:'#facc15'},
+  {label:'Fat',data:[],backgroundColor:'#ef4444'}
+]}, options: { scales: { y: { ticks: { color: 'white' } }, x: { ticks: { color: 'white' } } } }});
+
+function updateChart(){
+  chart.data.labels = meals.map(m=> `${m.day}: ${m.name}`);
+  chart.data.datasets[0].data = meals.map(m=>m.protein);
+  chart.data.datasets[1].data = meals.map(m=>m.carbs);
+  chart.data.datasets[2].data = meals.map(m=>m.fat);
+  chart.update();
+}
+
+// Search field auto-fill
+document.getElementById("foodSearch").addEventListener("input", (e) => {
+    const val = e.target.value;
+    if(foodData[val]) {
+        document.getElementById("calories").value = foodData[val].c;
+        document.getElementById("protein").value = foodData[val].p;
+        document.getElementById("carbs").value = foodData[val].ch;
+        document.getElementById("fat").value = foodData[val].f;
+    }
+});
+
+saveAndRender();
+</script>
+</body>
+</html>

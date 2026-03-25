@@ -1,0 +1,111 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #000000, #0f2027);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+/* LOGIN CARD */
+.container {
+  background: #0b0b0b;
+  width: 100%;
+  max-width: 380px;
+  padding: 35px 30px;
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(0, 255, 179, 0.15);
+  text-align: center;
+}
+
+/* TITLE */
+.container h2 {
+  margin-bottom: 25px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.container h2 span {
+  color: #00ffb3;
+}
+
+/* FORM */
+.container form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* INPUTS */
+.container input {
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  border: 2px solid #222;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #fff;
+  outline: none;
+  transition: 0.3s ease;
+}
+
+.container input::placeholder {
+  color: #aaa;
+}
+
+/* INPUT FOCUS */
+.container input:focus {
+  border-color: #00ffb3;
+  box-shadow: 0 0 10px rgba(0, 255, 179, 0.3);
+}
+
+/* LOGIN BUTTON */
+.container button {
+  margin-top: 10px;
+  padding: 12px;
+  background: #00ffb3;
+  color: #000;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.container button:hover {
+  background: #00e6a3;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 255, 179, 0.3);
+}
+
+/* SMALL TEXT (OPTIONAL) */
+.footer-text {
+  margin-top: 18px;
+  font-size: 13px;
+  color: #aaa;
+}
+
+.footer-text a {
+  color: #00ffb3;
+  text-decoration: none;
+}
+
+.footer-text a:hover {
+  text-decoration: underline;
+}
+
+/* MOBILE */
+@media (max-width: 480px) {
+  .container {
+    margin: 0 15px;
+    padding: 30px 20px;
+  }
+}

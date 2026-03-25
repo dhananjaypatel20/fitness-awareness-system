@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart BMI System</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #020b1f;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.card {
+    background: #0b1c3d;
+    padding: 25px;
+    border-radius: 15px;
+    width: 320px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0,255,150,0.2);
+}
+
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: none;
+}
+
+button {
+    background: #00e676;
+    border: none;
+    padding: 10px;
+    width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.hidden { display: none; }
+
+/* Popup */
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.8);
+}
+
+.popup-content {
+    background: rgb(6, 1, 29);
+    color: black(7, 3, 0);
+    padding: 20px;
+    border-radius: 10px;
+    width: 350px;
+    text-align: center;
+}
+
+.popup img {
+    width: 120px;
+    margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- BMI -->
+<div class="card" id="bmiBox">
+    <h2>📊 Smart BMI Calculator</h2>
+    <input type="text" id="name" placeholder="Your Name">
+    <input type="number" id="weight" placeholder="Weight (kg)">
+    <input type="number" id="height" placeholder="Height (cm)">
+    <button onclick="checkBMI()">Start</button>
+</div>
+
+<!-- Questions -->
+<div class="card hidden" id="questionBox">
+    <h3 id="questionText"></h3>
+    <div id="options"></div>
+</div>
+
+<!-- RESULT POPUP -->
+<div class="popup" id="popup">
+    <div class="popup-content">
+        <h2 id="popupTitle"></h2>
+        <p id="popupText"></p>
+        <img id="popupImg">
+        <button onclick="showPlan()">View Full Plan</button>
+        <button onclick="closePopup()">Close</button>
+    </div>
+</div>
+
+<!-- FULL PLAN POPUP -->
+<div class="popup" id="planPopup">
+    <div class="popup-content">
+        <h2>🔥 Personalized Plan</h2>
+        <p id="planText"></p>
+        <button onclick="closePlan()">Close</button>
+    </div>
+</div>
+
+<script>
+
+let bmi = 0;
+let category = "";
+let img = "";
+
+// Answers store karne ke liye
+let userData = {
+    goal: "",
+    activity: "",
+    diet: "",
+    sleep: "",
+    feeling: "",
+    exercise: ""
+};
+
+// 6 QUESTIONS
+const quiz = [
+    {q:"What is your goal?", options:["Weight Loss","Maintain","Muscle Gain"]},
+    {q:"How active are you?", options:["Low","Moderate","High"]},
+    {q:"Your eating habit?", options:["Junk Food","Mixed","Healthy"]},
+    {q:"Sleep hours?", options:["<5","6-7","8+"]},
+    {q:"How do you feel daily?", options:["Tired","Normal","Energetic"]},
+    {q:"Do you exercise?", options:["No","Sometimes","Regularly"]}
+];
+
+let current = 0;
+
+// BMI
+function checkBMI() {
+    let name = document.getElementById("name").value;
+    let w = document.getElementById("weight").value;
+    let h = document.getElementById("height").value / 100;
+
+    if (!name || !w || !h) {
+        alert("Fill all fields!");
+        return;
+    }
+
+    bmi = (w / (h*h)).toFixed(2);
+
+    if (bmi < 18.5) { category="Underweight"; img="thin.png"; }
+    else if (bmi < 24.9) { category="Normal"; img="fit.png"; }
+    else if (bmi < 29.9) { category="Overweight"; img="overweight.png"; }
+    else { category="Obese"; img="obese.png"; }
+
+    document.getElementById("bmiBox").classList.add("hidden");
+    document.getElementById("questionBox").classList.remove("hidden");
+
+    showQuestion();
+}
+
+// Show Question
+function showQuestion() {
+    let q = quiz[current];
+    document.getElementById("questionText").innerText = q.q;
+
+    let html="";
+    q.options.forEach(opt=>{
+        html += `<button onclick="nextQuestion('${opt}')">${opt}</button>`;
+    });
+
+    document.getElementById("options").innerHTML = html;
+}
+
+// Next Question + Store Answers
+function nextQuestion(ans) {
+
+    if (current === 0) userData.goal = ans;
+    if (current === 1) userData.activity = ans;
+    if (current === 2) userData.diet = ans;
+    if (current === 3) userData.sleep = ans;
+    if (current === 4) userData.feeling = ans;
+    if (current === 5) userData.exercise = ans;
+
+    current++;
+
+    if (current < quiz.length) showQuestion();
+    else showPopup();
+}
+
+// Popup 1 (Summary)
+function showPopup() {
+    let name = document.getElementById("name").value;
+
+    document.getElementById("popup").style.display="flex";
+
+    document.getElementById("popupTitle").innerText =
+        `${name}, Your BMI Category: ${category}`;
+
+    document.getElementById("popupText").innerText =
+        `BMI Value: ${bmi}`;
+
+    document.getElementById("popupImg").src = img;
+}
+
+// Popup 2 (Smart Plan)
+function showPlan() {
+
+    document.getElementById("planPopup").style.display="flex";
+
+    let plan = "";
+
+    // BMI + answers combine logic
+    if (category == "Underweight") {
+        plan = "🍽 High calorie + protein diet\n🏋 Strength training\n😴 Good sleep";
+    }
+    else if (category == "Normal") {
+        plan = "🍽 Balanced diet\n🏋 Regular workout\n💧 Stay hydrated";
+    }
+    else if (category == "Overweight") {
+        plan = "🍽 Reduce junk food\n🏃 Cardio daily\n🥗 Healthy eating";
+    }
+    else {
+        plan = "🍽 Strict diet\n🏃 Daily cardio\n⚠ Discipline required";
+    }
+
+    // Extra personalization
+    if (userData.sleep === "<5") {
+        plan += "\n😴 Improve sleep (very important)";
+    }
+
+    if (userData.exercise === "No") {
+        plan += "\n🏃 Start light exercise daily";
+    }
+
+    if (userData.diet === "Junk Food") {
+        plan += "\n🚫 Reduce junk food intake";
+    }
+
+    document.getElementById("planText").innerText = plan;
+}
+
+// Close
+function closePopup() {
+    document.getElementById("popup").style.display="none";
+}
+
+function closePlan() {
+    document.getElementById("planPopup").style.display="none";
+}
+
+</script>

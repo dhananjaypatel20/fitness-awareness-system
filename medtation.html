@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Tracking AI | Fixed Audio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+    <style>
+        /* (Keeping your original CSS with one small addition for the music label) */
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
+        body { background: #020617; color: white; display:flex; flex-direction:column; align-items:center; padding:20px; min-height:100vh; transition: background 1.5s ease; }
+        h1 { margin:20px 0; color:#22c55e; text-shadow: 0 0 10px rgba(34,197,94,0.3); }
+        .timer-container { position: relative; width: 160px; height: 160px; margin: 20px 0; }
+        .circle-breath { position:absolute; width:100%; height:100%; border-radius:50%; border:6px solid #22c55e; display:flex; justify-content:center; align-items:center; font-size:2rem; background: rgba(255,255,255,0.05); }
+        .animating { animation: breath 4s infinite ease-in-out; }
+        @keyframes breath { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        button { padding:12px 24px; border:none; border-radius:10px; background:#22c55e; color:white; cursor:pointer; font-weight:600; transition:0.3s; }
+        button:hover { transform: scale(1.05); background: #16a34a; }
+        button.cancel-btn { background: #475569; }
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.98); display: none; justify-content: center; align-items: center; z-index:100; }
+        .modal { background: #1e293b; padding: 30px; border-radius: 20px; text-align: center; border:2px solid #22c55e; width:95%; max-width:450px; }
+        #progress-bar { width:100%; height:8px; background:#334155; border-radius:4px; margin-bottom:15px; overflow:hidden; }
+        #progress-fill { height:100%; background:#22c55e; width:0%; transition:0.3s; }
+        .btn-ans { background:#334155; width:100%; margin:6px 0; text-align:left; padding:14px; font-size:0.95rem; color:white; border:none; border-radius:8px; cursor:pointer; }
+        .btn-ans:hover { background:#475569; border-left:5px solid #22c55e; }
+        .history { width:100%; max-width:550px; margin-top:30px; background: rgba(255,255,255,0.05); border-radius:10px; padding:10px; }
+        table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+        th, td { padding:12px; text-align:left; border-bottom:1px solid #334155; }
+        #now-playing { margin-top: 10px; font-size: 0.9rem; color: #22c55e; font-weight: 600; display: none; }
+    </style>
+</head>
+<body>
+
+<h1>🧠 Mood Tracking AI</h1>
+
+<div class="timer-container">
+    <div id="circle" class="circle-breath">00:05</div>
+</div>
+
+<div id="now-playing">🎵 Now Playing: None</div>
+
+<div class="controls">
+    <button id="startBtn" onclick="toggleTimer()">Start Tracking</button>
+    <button id="cancelBtn" class="cancel-btn" style="display:none;" onclick="cancelTimer()">Cancel Tracking</button>
+</div>
+
+<div class="history">
+    <table>
+        <thead><tr><th>Time</th><th>Your Mood</th><th>Music Style</th></tr></thead>
+        <tbody id="log"></tbody>
+    </table>
+</div>
+
+<div id="modal" class="modal-overlay">
+    <div class="modal">
+        <div id="progress-bar"><div id="progress-fill"></div></div>
+        <p id="qCount" style="font-size:0.8rem; color:#22c55e; margin-bottom:5px;">Analyzing Mood...</p>
+        <h2 id="qText" style="margin-bottom:20px;">Loading Question...</h2>
+        <div id="options"></div>
+    </div>
+</div>
+
+<script>
+let timeLeft = 5;
+let timer = null;
+let active = false;
+let currentAudio = new Audio(); // Persistent audio object
+let currentQuestionIndex = 0;
+let moodScores = { cool:0, calm:0, stress:0, funny:0, sad:0 };
+
+// FIXED DATA: All links now point to working web audio
+const songData = {
+    calm: { name: "Nature Zen Ambient", color:"#064e3b", url:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+    stress: { name: "Fast Drum Energy", color:"#7f1d1d", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3" }, 
+    funny: { name: "Happy Upbeat Pizza", color:"#78350f", url:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
+    cool: { name: "Cyberpunk Synth", color:"#1e3a8a", url:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+    sad: { name: "Deep Piano Melancholy", color:"#1e293b", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
+};
+
+// 16 Questions
+const questions = [
+    { q:"How do you feel right now?", options:[{t:"I am happy", m:"funny"}, {t:"I am sad", m:"sad"}, {t:"I am relaxed", m:"calm"}, {t:"I am angry", m:"stress"}] },
+    { q:"How is your energy level?", options:[{t:"Very high", m:"cool"}, {t:"Normal", m:"calm"}, {t:"Very low", m:"sad"}, {t:"I feel nervous", m:"stress"}] },
+    { q:"Choose a color:", options:[{t:"Yellow", m:"funny"}, {t:"Blue", m:"calm"}, {t:"Black", m:"sad"}, {t:"Red", m:"stress"}] },
+    { q:"Pick a place to be:", options:[{t:"At a party", m:"funny"}, {t:"On a quiet beach", m:"calm"}, {t:"In a dark room", m:"sad"}, {t:"Working in an office", m:"cool"}] },
+    { q:"Is your mind busy?", options:[{t:"No, it is quiet", m:"calm"}, {t:"Yes, too many thoughts", m:"stress"}, {t:"I am thinking about work", m:"cool"}, {t:"I feel bored", m:"sad"}] },
+    { q:"What do you want to do?", options:[{t:"Dance and laugh", m:"funny"}, {t:"Sleep", m:"sad"}, {t:"Read a book", m:"calm"}, {t:"Play a game", m:"cool"}] },
+    { q:"How is the weather in your mind?", options:[{t:"Sunny", m:"cool"}, {t:"Rainy", m:"sad"}, {t:"Cloudy", m:"calm"}, {t:"Stormy", m:"stress"}] },
+    { q:"Are you tired?", options:[{t:"Not at all", m:"cool"}, {t:"A little bit", m:"calm"}, {t:"Yes, very tired", m:"sad"}, {t:"I am annoyed", m:"stress"}] },
+    { q:"Pick a snack:", options:[{t:"Ice cream", m:"funny"}, {t:"Warm soup", m:"sad"}, {t:"Fresh fruit", m:"calm"}, {t:"Coffee", m:"stress"}] },
+    { q:"How is your heart beating?", options:[{t:"Fast", m:"stress"}, {t:"Slow and steady", m:"calm"}, {t:"Heavy", m:"sad"}, {t:"Fast and happy", m:"funny"}] },
+    { q:"What do you need right now?", options:[{t:"A hug", m:"sad"}, {t:"Peace and quiet", m:"calm"}, {t:"A challenge", m:"cool"}, {t:"A good joke", m:"funny"}] },
+    { q:"Pick a movie genre:", options:[{t:"Comedy", m:"funny"}, {t:"Action", m:"cool"}, {t:"Drama", m:"sad"}, {t:"None, just silence", m:"calm"}] },
+    { q:"How was your day today?", options:[{t:"Great", m:"cool"}, {t:"It was okay", m:"calm"}, {t:"Not very good", m:"sad"}, {t:"Very busy and stressful", m:"stress"}] },
+    { q:"Pick an animal:", options:[{t:"Playful Dog", m:"funny"}, {t:"Quiet Cat", m:"calm"}, {t:"Strong Wolf", m:"cool"}, {t:"Lonely Bird", m:"sad"}] },
+    { q:"How is your room?", options:[{t:"Bright and loud", m:"funny"}, {t:"Dark and quiet", m:"sad"}, {t:"Clean and organized", m:"cool"}, {t:"A bit messy", m:"stress"}] },
+    { q:"Final choice: how do you want to feel?", options:[{t:"Excited", m:"cool"}, {t:"Safe", m:"calm"}, {t:"Better than now", m:"sad"}, {t:"Free", m:"funny"}] }
+];
+
+function toggleTimer() {
+    if(active) return;
+    active = true;
+    timeLeft = 5;
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('cancelBtn').style.display = 'inline-block';
+    document.getElementById('circle').classList.add('animating');
+    
+    timer = setInterval(() => {
+        timeLeft--;
+        const sec = timeLeft < 10 ? '0' + timeLeft : timeLeft;
+        document.getElementById('circle').innerText = `00:${sec}`;
+        if(timeLeft <= 0) startAnalysis();
+    }, 1000);
+}
+
+function cancelTimer() {
+    clearInterval(timer);
+    active = false;
+    timeLeft = 5;
+    document.getElementById('circle').innerText = `00:05`;
+    document.getElementById('circle').classList.remove('animating');
+    document.getElementById('startBtn').style.display = 'inline-block';
+    document.getElementById('cancelBtn').style.display = 'none';
+}
+
+function startAnalysis() {
+    clearInterval(timer);
+    active = false;
+    document.getElementById('circle').classList.remove('animating');
+    document.getElementById('startBtn').style.display = 'inline-block';
+    document.getElementById('cancelBtn').style.display = 'none';
+    
+    currentQuestionIndex = 0; 
+    moodScores = { cool:0, calm:0, stress:0, funny:0, sad:0 };
+    document.getElementById('modal').style.display = 'flex';
+    showQuestion();
+}
+
+function showQuestion() {
+    const q = questions[currentQuestionIndex];
+    document.getElementById('qText').innerText = q.q;
+    document.getElementById('qCount').innerText = `Question: ${currentQuestionIndex+1}/16`;
+    document.getElementById('progress-fill').style.width = `${((currentQuestionIndex+1)/16)*100}%`;
+    
+    const container = document.getElementById('options');
+    container.innerHTML = '';
+    
+    q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-ans';
+        btn.innerText = opt.t;
+        btn.onclick = () => handleAnswer(opt.m);
+        container.appendChild(btn);
+    });
+}
+
+function handleAnswer(mood) {
+    moodScores[mood]++;
+    currentQuestionIndex++;
+    if(currentQuestionIndex < 16) {
+        showQuestion();
+    } else {
+        finishAnalysis();
+    }
+}
+
+function finishAnalysis() {
+    let finalMood = Object.keys(moodScores).reduce((a, b) => moodScores[a] > moodScores[b] ? a : b);
+    const selected = songData[finalMood];
+    
+    // Switch Audio Source
+    currentAudio.src = selected.url;
+    currentAudio.loop = true;
+    currentAudio.play();
+
+    // UI Updates
+    document.body.style.background = selected.color;
+    document.getElementById('now-playing').style.display = 'block';
+    document.getElementById('now-playing').innerText = `🎵 Now Playing: ${selected.name}`;
+    
+    const log = document.getElementById('log');
+    log.insertAdjacentHTML('afterbegin', `
+        <tr>
+            <td>${new Date().toLocaleTimeString()}</td>
+            <td><b style="color:#22c55e">${finalMood.toUpperCase()}</b></td>
+            <td>${selected.name}</td>
+        </tr>
+    `);
+    
+    document.getElementById('qText').innerText = "Mood Tracking Complete!";
+    document.getElementById('options').innerHTML = `
+        <h2 style="margin-top:10px; color:#22c55e;">Your Mood: ${finalMood.toUpperCase()}</h2>
+        <p style="margin:15px 0;">The AI is playing music to help you feel better.</p>
+        <button onclick="closeModal()">Stop & Reset</button>
+    `;
+}
+
+function closeModal() {
+    currentAudio.pause();
+    document.body.style.background = "#020617";
+    document.getElementById('modal').style.display = 'none';
+    document.getElementById('circle').innerText = `00:05`;
+    document.getElementById('now-playing').style.display = 'none';
+}
+</script>
+</body>
+</html>

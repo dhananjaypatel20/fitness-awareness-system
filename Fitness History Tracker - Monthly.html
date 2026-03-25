@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitness History Tracker - One Month</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
+
+body { 
+    background: linear-gradient(135deg, #020617, #0f172a); 
+    color:white; 
+    min-height:100vh; 
+    padding:20px;
+}
+
+.container {
+    max-width:900px;
+    margin:0 auto;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(15px);
+    border-radius:20px;
+    padding:30px;
+    box-shadow:0 0 30px rgba(34,197,94,0.2);
+}
+
+h1 { text-align:center; color:#22c55e; margin-bottom:25px; }
+
+input { width:80%; padding:10px; margin:10px 0; border-radius:10px; border:none; }
+
+button { 
+    padding:12px 25px; 
+    margin-top:10px; 
+    background:#22c55e; 
+    border:none; 
+    border-radius:10px; 
+    cursor:pointer; 
+    font-weight:600; 
+    transition: transform 0.3s; 
+}
+
+button:hover { transform: scale(1.05); }
+
+.clear-btn {
+    background:#ef4444;
+    margin-left:10px;
+}
+
+.history-table { 
+    width:100%; 
+    margin-top:20px; 
+    border-collapse:collapse; 
+}
+
+.history-table th, .history-table td { 
+    padding:10px; 
+    border-bottom:1px solid rgba(255,255,255,0.2); 
+    text-align:center; 
+}
+
+canvas { 
+    margin-top:30px; 
+    background: rgba(0,0,0,0.1); 
+    border-radius:15px; 
+    padding:15px; 
+}
+
+@media(max-width:700px){ input{width:95%;} }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>📊 Fitness History Tracker - Monthly</h1>
+    
+    <input type="date" id="logDate">
+    <input type="number" id="steps" placeholder="Steps">
+    <input type="number" id="water" placeholder="Water glasses">
+    <input type="number" id="sleep" placeholder="Hours of sleep">
+    
+    <br>
+    <button onclick="saveDay()">Save Entry</button>
+    <button class="clear-btn" onclick="clearAllData()">Delete All History</button>
+
+    <table class="history-table" id="historyTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Steps</th>
+                <th>Water</th>
+                <th>Sleep</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <canvas id="historyChart" height="250"></canvas>
+</div>
+
+<script>
+const STORAGE_KEY = "fitnessHistoryMonth";
+
+function calculateScore(steps, water, sleep){
+    return Math.min(100, Math.floor((steps/10000*40) + (water/8*30) + (sleep/8*30)));
+}
+
+// SAVE ENTRY
+function saveDay(){
+    const date = document.getElementById('logDate').value;
+    if(!date){
+        alert("Please select a date!");
+        return;
+    }
+
+    const steps = parseInt(document.getElementById('steps').value) || 0;
+    const water = parseInt(document.getElementById('water').value) || 0;
+    const sleep = parseInt(document.getElementById('sleep').value) || 0;
+
+    const score = calculateScore(steps, water, sleep);
+
+    let history = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+    const existingIndex = history.findIndex(h => h.date === date);
+
+    if(existingIndex > -1){
+        history[existingIndex] = {date, steps, water, sleep, score};
+    } else {
+        history.push({date, steps, water, sleep, score});
+    }
+
+    history.sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+
+    loadHistory();
+    updateChart();
+}
+
+// LOAD TABLE
+function loadHistory(){
+    let history = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const tbody = document.querySelector("#historyTable tbody");
+    tbody.innerHTML = "";
+
+    history.forEach(entry => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${entry.date}</td>
+            <td>${entry.steps}</td>
+            <td>${entry.water}</td>
+            <td>${entry.sleep}</td>
+            <td>${entry.score}</td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+// CLEAR ALL DATA
+function clearAllData(){
+    if(confirm("Delete ALL history? This cannot be undone!")){
+        localStorage.removeItem(STORAGE_KEY);
+
+        loadHistory();
+        updateChart();
+    }
+}
+
+// CHART
+let ctx = document.getElementById('historyChart').getContext('2d');
+
+let historyChart = new Chart(ctx, {
+    type:'line',
+    data:{
+        labels:[],
+        datasets:[
+            {label:'Steps', data:[], borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,0.2)', tension:0.3},
+            {label:'Water', data:[], borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.2)', tension:0.3},
+            {label:'Sleep', data:[], borderColor:'#facc15', backgroundColor:'rgba(250,204,21,0.2)', tension:0.3},
+            {label:'Score', data:[], borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.2)', tension:0.3}
+        ]
+    },
+    options:{
+        responsive:true,
+        plugins:{ legend:{ labels:{ color:'white' } } },
+        scales:{
+            y:{ beginAtZero:true, ticks:{ color:'white' } },
+            x:{ ticks:{ color:'white' } }
+        }
+    }
+});
+
+// UPDATE CHART
+function updateChart(){
+    let history = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+    historyChart.data.labels = history.map(h => h.date);
+    historyChart.data.datasets[0].data = history.map(h => h.steps);
+    historyChart.data.datasets[1].data = history.map(h => h.water);
+    historyChart.data.datasets[2].data = history.map(h => h.sleep);
+    historyChart.data.datasets[3].data = history.map(h => h.score);
+
+    historyChart.update();
+}
+
+// INIT
+loadHistory();
+updateChart();
+</script>
+
+</body>
+</html> 
