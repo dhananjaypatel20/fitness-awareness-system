@@ -22,3 +22,13 @@ scrollUp.addEventListener("click", () => {
 
 
 
+const form = document.getElementById("feedbackForm");
+const msg = document.getElementById("successMsg");
+
+form.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    msg.style.display = "block";
+
+    form.reset();
+});
