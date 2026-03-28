@@ -753,8 +753,88 @@ h2 {
     }
 
     .wl-section {
-        padding: 30px 20px;
+        padding: 30px 20px;MM
     }
 }
 
+/* SECTION */
+.feedback-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 20px;
+}
 
+/* BOX */
+.feedback-box {
+    width: 100%;
+    max-width: 500px;
+    padding: 40px;
+    border-radius: 20px;
+
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+
+    text-align: center;
+}
+
+.feedback-box h2 {
+    margin-bottom: 10px;
+}
+
+.feedback-box p {
+    font-size: 14px;
+    color: #ccc;
+    margin-bottom: 25px;
+}
+
+/* INPUT */
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group input,
+.input-group textarea,
+.input-group select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+}
+
+textarea {
+    height: 100px;
+    resize: none;
+}
+
+/* BUTTON */
+.feedback-submit {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+
+    background: #00ffb3;
+    color: #000;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.feedback-submit:hover {
+    background: #00e6a0;
+}
+
+/* SUCCESS MESSAGE */
+.success-msg {
+    margin-top: 15px;
+    display: none;
+    color: #00ffb3;
+}
