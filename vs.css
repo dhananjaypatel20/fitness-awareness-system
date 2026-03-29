@@ -10,7 +10,7 @@ body {
     color: #fff;
 }
 
-/* NAVBAR */
+/* NAVBAR
 .navbar {
     display: flex;
     align-items: center;
@@ -45,7 +45,82 @@ nav a:hover {
     padding: 8px 20px;
     border-radius: 8px;
     cursor: pointer;
+} */
+
+
+
+
+/* NAVBAR */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 60px;
+    flex-wrap: nowrap;        /* prevent wrapping */
+    overflow-x: auto;         /* scroll if needed */
 }
+
+/* LOGO */
+.logo {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.logo span {
+    color: #00ffb3;
+}
+
+/* NAV LINKS */
+nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    white-space: nowrap;      /* keep links in one line */
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    margin: 0 8px;
+    transition: 0.3s;
+}
+
+nav a:hover {
+    color: #00ffb3;
+}
+
+/* BUTTON */
+.nav-btn {
+    background: transparent;
+    border: 2px solid #00ffb3;
+    color: #00ffb3;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .navbar {
+        padding: 15px 20px;
+    }
+
+    nav a {
+        font-size: 13px;
+    }
+
+    .nav-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
+
+
+
+
 
 /* HERO */
 .home {
@@ -753,9 +828,12 @@ h2 {
     }
 
     .wl-section {
-        padding: 30px 20px;MM
+        padding: 30px 20px;
     }
 }
+
+
+/* Feedbak pages */
 
 /* SECTION */
 .feedback-page {
