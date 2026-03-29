@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fitness Membership Payment</title>
+<style>
+      /* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* BACKGROUND (same as your website) */
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #020617; /* same dark theme */
+}
+
+/* CARD */
+.container {
+  background: #1e293b; /* website card color */
+  padding: 30px;
+  border-radius: 12px;
+  width: 450px;
+  box-shadow: 0 0 20px rgba(0,255,150,0.1);
+}
+
+/* TITLE */
+h2 {
+  color: white;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* LABEL */
+label {
+  color: #cbd5e1;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* INPUT SAME SIZE */
+input, select {
+  width: 100%;
+  height: 45px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #020617;
+  color: white;
+  outline: none;
+  margin-bottom: 12px;
+}
+
+/* PLACEHOLDER */
+input::placeholder {
+  color: #64748b;
+}
+
+/* BUTTON */
+.btn {
+  width: 100%;
+  height: 45px;
+  background: #22c55e; /* green theme */
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* HOVER */
+.btn:hover {
+  background: #16a34a;
+  transform: scale(1.03);
+}
+</style>
+</head>
+<body>  
+
+  <div class="container">
+    <h2>Fitness Membership Payment</h2>
+
+    <div class="input-group">
+      <label>Full Name</label>
+      <input type="text" placeholder="John Doe">
+    </div>
+
+    <div class="input-group">
+      <label>Email</label>
+      <input type="email" placeholder="john@example.com">
+    </div>
+
+    <div class="input-group">
+      <label>Phone Number</label>
+      <input type="text" placeholder="+91 9876543210">
+    </div>
+
+    <div class="input-group">
+      <label>Select Plan</label>
+      <select>
+        <option value="">Select Plan</option>
+        <option value="Basic">Basic ₹499</option>
+        <option value="Premium">Premium ₹999</option>
+        <option value="Elite">Elite ₹1999</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>UPI ID</label>
+      <input type="text" placeholder="yourname@upi">
+    </div>
+
+    <button class="btn">Pay Now</button>
+  </div>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+document.querySelector(".btn").addEventListener("click", async function () {
+
+  const response = await fetch("http://localhost:5000/create-order", {
+    method: "POST"
+  });
+
+  const data = await response.json();
+
+  var options = {
+    "key": "YOUR_KEY_ID", 
+    "amount": data.amount,
+    "currency": "INR",
+    "name": "Fitness Membership",
+    "description": "Plan Payment",
+    "order_id": data.id,
+    "handler": function (response){
+        alert("Payment Successful!");
+    }
+  };
+
+  var rzp1 = new Razorpay(options);
+  rzp1.open();
+});
+</script>
+</body>
+</html>
